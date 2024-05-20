@@ -19,6 +19,10 @@ namespace Gazeus.DesafioMatch3.Views
         private GameObject[][] _tiles;
         private TileSpotView[][] _tileSpots;
 
+        [SerializeField] private SFXManager sfx_manager;
+        [SerializeField] private CharacterManager char_manager;
+        private int tilesDestoyed;
+
         public void CreateBoard(List<List<Tile>> board)
         {
             _boardContainer.constraintCount = board[0].Count;
@@ -48,8 +52,11 @@ namespace Gazeus.DesafioMatch3.Views
 
                         _tiles[y][x] = tile;
                     }
+                    //Cria cada Tile
                 }
             }
+
+            //Cria o Board
         }
 
         public Tween CreateTile(List<AddedTileInfo> addedTiles)
@@ -71,7 +78,7 @@ namespace Gazeus.DesafioMatch3.Views
                 tile.transform.localScale = Vector2.zero;
                 sequence.Join(tile.transform.DOScale(1.0f, 0.2f));
             }
-
+            //Depois do swap e destruição, cria mais tiles 
             return sequence;
         }
 
@@ -82,9 +89,39 @@ namespace Gazeus.DesafioMatch3.Views
                 Vector2Int position = matchedPosition[i];
                 Destroy(_tiles[position.y][position.x]);
                 _tiles[position.y][position.x] = null;
+                //Para cada peça destruida;
+                tilesDestoyed++;
             }
 
-            return DOVirtual.DelayedCall(0.2f, () => { });
+            CountDestoyed();
+            return DOVirtual.DelayedCall(0.2f, () => { });            
+        }
+        
+        public void CountDestoyed()
+        {
+            
+
+            if (tilesDestoyed > 7)
+            {
+                sfx_manager.PlayAudioMaxMatch();
+                char_manager.CharShout();
+                char_manager.PlayConfetti();
+                Debug.Log("Mais que 7");
+            }
+            else if (tilesDestoyed < 7 && tilesDestoyed > 3)
+            {
+                sfx_manager.PlayAudioSuperMatch();
+                char_manager.PlayConfetti();
+                Debug.Log("Mais que 3");
+            }
+            else
+            {
+                sfx_manager.PlayAudioMatch();
+                Debug.Log("Menor que 3");
+            }
+
+
+            tilesDestoyed = 0;
         }
 
         public Tween MoveTiles(List<MovedTileInfo> movedTiles)
@@ -113,7 +150,7 @@ namespace Gazeus.DesafioMatch3.Views
             }
 
             _tiles = tiles;
-
+            //Quando completa um movimento
             return sequence;
         }
 
@@ -124,7 +161,8 @@ namespace Gazeus.DesafioMatch3.Views
             sequence.Join(_tileSpots[toY][toX].AnimatedSetTile(_tiles[fromY][fromX]));
 
             (_tiles[toY][toX], _tiles[fromY][fromX]) = (_tiles[fromY][fromX], _tiles[toY][toX]);
-
+            //Quando faz a troca das peças
+            sfx_manager.PlayAudioSwap();
             return sequence;
         }
 
